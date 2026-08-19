@@ -1,0 +1,15 @@
+# Core data manipulation
+pandas>=1.5.0
+numpy>=1.23.0
+
+# ML
+scikit-learn>=1.2.0
+xgboost>=1.7.0
+
+# Visualization
+matplotlib>=3.6.0
+
+# Jupyter
+jupyter>=1.0.0
+
+# SQLite is part of Python stdlib — no extra dependency needed
