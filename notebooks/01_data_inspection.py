@@ -1,218 +1,355 @@
 """
 01_data_inspection.py
 ====================
-P0.2: Initial Data Inspection of the Lending Club Dataset.
+P0.2R: Initial Data Inspection of the Full Lending Club Accepted Loans Dataset.
 
-Source: OpenML Dataset ID 43729 (Lending Club Loan Data, 2007-2015 era)
+Source: Kaggle - wordsforthewise/lending-club
+File: accepted_2007_to_2018Q4.csv
 License: CC0 Public Domain
+Original source: LendingClub.com (2007-2018)
 
 This script inspects the raw dataset WITHOUT any cleaning or transformation.
-Its purpose is to understand what we're working with before P0.3.
+Its purpose is to understand the data before P0.3R (target definition).
+
+NOTE: This replaces the original P0.2 inspection which used the simplified
+      OpenML dataset (9,578 rows, 14 columns). The full dataset has
+      ~2.26 million rows and 151 columns.
 """
 
 import pandas as pd
 import numpy as np
 import os
+import sys
+
+# ============================================================
+# Configuration
+# ============================================================
+
+DATA_PATH = os.path.join("data", "raw", "accepted_2007_to_2018Q4.csv")
+
+print("=" * 70)
+print("LENDING CLUB ACCEPTED LOANS -- FULL DATASET INSPECTION (P0.2R)")
+print("=" * 70)
+print(f"\nData source: Kaggle (wordsforthewise/lending-club)")
+print(f"File path: {DATA_PATH}")
+print(f"File size: {os.path.getsize(DATA_PATH) / (1024**2):.1f} MB")
 
 # ============================================================
 # 1. Load the raw dataset
 # ============================================================
 
-DATA_PATH = os.path.join("data", "raw", "lending_club_loans.csv")
-
-print("=" * 60)
-print("LENDING CLUB LOAN DATA — INITIAL INSPECTION")
-print("=" * 60)
-print(f"\nData source: OpenML Dataset ID 43729")
-print(f"File path: {DATA_PATH}")
-
-df = pd.read_csv(DATA_PATH)
-
-print(f"\n{'=' * 60}")
-print("1. DATASET SHAPE")
-print(f"{'=' * 60}")
+print(f"\n{'=' * 70}")
+print("1. LOADING DATASET")
+print(f"{'=' * 70}")
+print("Loading (this takes 30-60 seconds for ~2.3M rows)...")
+df = pd.read_csv(DATA_PATH, low_memory=False)
 print(f"Rows:    {df.shape[0]:,}")
 print(f"Columns: {df.shape[1]}")
 
 # ============================================================
-# 2. Column names and dtypes
+# 2. Column inventory with dtypes
 # ============================================================
 
-print(f"\n{'=' * 60}")
-print("2. COLUMNS AND DATA TYPES")
-print(f"{'=' * 60}")
-print(f"\n{'Column':<25} {'Dtype':<15}")
-print("-" * 40)
-for col in df.columns:
-    print(f"{col:<25} {str(df[col].dtype):<15}")
+print(f"\n{'=' * 70}")
+print("2. COLUMN INVENTORY")
+print(f"{'=' * 70}")
+print(f"\n{'#':<4} {'Column':<40} {'Dtype':<12} {'Non-Null':>10} {'Null%':>7}")
+print("-" * 80)
+for i, col in enumerate(df.columns):
+    dtype = str(df[col].dtype)
+    non_null = df[col].notna().sum()
+    null_pct = df[col].isnull().sum() / len(df) * 100
+    print(f"{i:<4} {col:<40} {dtype:<12} {non_null:>10,} {null_pct:>6.1f}%")
 
 # ============================================================
-# 3. Missing values
+# 3. Target variable: loan_status
 # ============================================================
 
-print(f"\n{'=' * 60}")
-print("3. MISSING VALUES")
-print(f"{'=' * 60}")
-missing = df.isnull().sum()
-missing_pct = (df.isnull().sum() / len(df) * 100).round(2)
-missing_df = pd.DataFrame({
-    "missing_count": missing,
-    "missing_pct": missing_pct
-})
-print(f"\n{missing_df.to_string()}")
-print(f"\nTotal cells with missing values: {df.isnull().sum().sum()}")
-
-# ============================================================
-# 4. Target variable: not.fully.paid
-# ============================================================
-
-print(f"\n{'=' * 60}")
-print("4. TARGET VARIABLE: not.fully.paid")
-print(f"{'=' * 60}")
-if "not.fully.paid" in df.columns:
-    target_counts = df["not.fully.paid"].value_counts().sort_index()
-    target_pcts = df["not.fully.paid"].value_counts(normalize=True).sort_index() * 100
-    print(f"\nValue counts:")
-    for val in target_counts.index:
-        label = "Fully Paid" if val == 0 else "Not Fully Paid (Default)"
-        print(f"  {val} ({label}): {target_counts[val]:,} ({target_pcts[val]:.1f}%)")
-    print(f"\nClass imbalance ratio (majority / minority): "
-          f"{target_counts.max() / target_counts.min():.2f}")
-else:
-    print("WARNING: 'not.fully.paid' column not found!")
-    print("Available columns:", list(df.columns))
-
-# ============================================================
-# 5. Check for loan_status column (common in full LC data)
-# ============================================================
-
-print(f"\n{'=' * 60}")
-print("5. LOAN STATUS CHECK")
-print(f"{'=' * 60}")
+print(f"\n{'=' * 70}")
+print("3. TARGET VARIABLE: loan_status")
+print(f"{'=' * 70}")
 if "loan_status" in df.columns:
-    print(f"\nloan_status values:")
-    print(df["loan_status"].value_counts().to_string())
-else:
-    print("\nNo 'loan_status' column found.")
-    print("This dataset uses 'not.fully.paid' as the pre-computed binary target.")
-    print("  0 = Fully Paid")
-    print("  1 = Not Fully Paid (Default/Charged Off)")
-
-# ============================================================
-# 6. Date columns check
-# ============================================================
-
-print(f"\n{'=' * 60}")
-print("6. DATE COLUMNS CHECK")
-print(f"{'=' * 60}")
-date_cols = [col for col in df.columns if any(
-    keyword in col.lower() for keyword in ["date", "issue", "earliest", "last"]
-)]
-if date_cols:
-    print(f"\nPotential date columns found: {date_cols}")
-    for col in date_cols:
-        print(f"\n  {col}:")
-        print(f"    Sample values: {df[col].head().tolist()}")
-else:
-    print("\nNo date columns found in this dataset.")
-    print("This means we CANNOT do temporal train/test split by loan issue date.")
-    print("We will need an alternative strategy for P0.8 (discussed below).")
-
-# ============================================================
-# 7. Numerical summary
-# ============================================================
-
-print(f"\n{'=' * 60}")
-print("7. NUMERICAL SUMMARY")
-print(f"{'=' * 60}")
-numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
-print(f"\nNumeric columns ({len(numeric_cols)}):")
-print(df[numeric_cols].describe().round(2).to_string())
-
-# ============================================================
-# 8. Categorical columns
-# ============================================================
-
-print(f"\n{'=' * 60}")
-print("8. CATEGORICAL COLUMNS")
-print(f"{'=' * 60}")
-cat_cols = df.select_dtypes(include=["object"]).columns.tolist()
-if cat_cols:
-    for col in cat_cols:
-        print(f"\n  {col}:")
-        print(f"    Unique values ({df[col].nunique()}): {df[col].unique().tolist()}")
-else:
-    print("No categorical (object) columns found.")
-
-# ============================================================
-# 9. credit.policy column inspection
-# ============================================================
-
-print(f"\n{'=' * 60}")
-print("9. CREDIT POLICY COLUMN")
-print(f"{'=' * 60}")
-if "credit.policy" in df.columns:
-    print(f"\ncredit.policy value counts:")
-    cp_counts = df["credit.policy"].value_counts().sort_index()
-    for val, count in cp_counts.items():
+    status_counts = df["loan_status"].value_counts()
+    print(f"\nUnique statuses: {df['loan_status'].nunique()}")
+    print(f"Null count: {df['loan_status'].isnull().sum()}")
+    print(f"\nDistribution:")
+    for status, count in status_counts.items():
         pct = count / len(df) * 100
-        label = "Meets credit underwriting" if val == 1 else "Does NOT meet criteria"
-        print(f"  {val} ({label}): {count:,} ({pct:.1f}%)")
+        print(f"  {status:<55} {count:>10,}  ({pct:>5.2f}%)")
+
+    # Categorize for P0.3R reference
+    print("\n  Preliminary categorization for P0.3R:")
+    definitive = ["Fully Paid", "Charged Off", "Default"]
+    unresolved = ["Current", "Late (31-120 days)", "In Grace Period", "Late (16-30 days)"]
+    policy = [s for s in status_counts.index if "credit policy" in s.lower()]
+
+    for status in status_counts.index:
+        count = status_counts[status]
+        if status in definitive:
+            cat = "DEFINITIVE"
+        elif status in unresolved:
+            cat = "UNRESOLVED (exclude)"
+        elif status in policy:
+            cat = "POLICY (review)"
+        else:
+            cat = "UNKNOWN (review)"
+        print(f"    [{cat:<25}] {status}")
+else:
+    print("WARNING: 'loan_status' column not found!")
 
 # ============================================================
-# 10. Key feature distributions (quick stats)
+# 4. Issue date: temporal range
 # ============================================================
 
-print(f"\n{'=' * 60}")
-print("10. KEY FEATURE QUICK STATS")
-print(f"{'=' * 60}")
-key_features = {
-    "int.rate": "Interest Rate",
-    "installment": "Monthly Installment ($)",
-    "log.annual.inc": "Log Annual Income",
-    "dti": "Debt-to-Income Ratio",
-    "fico": "FICO Score",
-    "days.with.cr.line": "Days with Credit Line",
-    "revol.bal": "Revolving Balance ($)",
-    "revol.util": "Revolving Utilization (%)",
+print(f"\n{'=' * 70}")
+print("4. ISSUE DATE (issue_d)")
+print(f"{'=' * 70}")
+if "issue_d" in df.columns:
+    print(f"\nNull count: {df['issue_d'].isnull().sum()}")
+    print(f"Unique months: {df['issue_d'].nunique()}")
+    print(f"Sample values: {df['issue_d'].dropna().head(5).tolist()}")
+
+    # Parse to datetime
+    df["issue_date_parsed"] = pd.to_datetime(df["issue_d"], format="%b-%Y", errors="coerce")
+    parse_failures = df["issue_date_parsed"].isnull().sum() - df["issue_d"].isnull().sum()
+    print(f"Parse failures: {parse_failures}")
+    print(f"Earliest: {df['issue_date_parsed'].min()}")
+    print(f"Latest:   {df['issue_date_parsed'].max()}")
+    print(f"Span:     {(df['issue_date_parsed'].max() - df['issue_date_parsed'].min()).days} days")
+
+    # Distribution by year
+    print("\nLoans issued by year:")
+    year_counts = df["issue_date_parsed"].dt.year.value_counts().sort_index()
+    for year, count in year_counts.items():
+        pct = count / len(df) * 100
+        bar = "#" * int(pct)
+        print(f"  {int(year)}: {count:>8,}  ({pct:>5.2f}%)  {bar}")
+else:
+    print("No 'issue_d' column found.")
+
+# ============================================================
+# 5. Borrower identification
+# ============================================================
+
+print(f"\n{'=' * 70}")
+print("5. BORROWER IDENTIFICATION")
+print(f"{'=' * 70}")
+
+# Check member_id
+if "member_id" in df.columns:
+    null_count = df["member_id"].isnull().sum()
+    print(f"\nmember_id:")
+    print(f"  Null: {null_count:,} / {len(df):,} ({null_count/len(df)*100:.1f}%)")
+    if null_count < len(df):
+        print(f"  Unique: {df['member_id'].nunique()}")
+    else:
+        print("  STATUS: ALL NULL -- cannot identify borrowers")
+        print("  IMPACT: No multi-loan-per-borrower features possible")
+
+# Check loan id
+if "id" in df.columns:
+    null_count = df["id"].isnull().sum()
+    unique = df["id"].nunique()
+    print(f"\nid (loan ID):")
+    print(f"  Null: {null_count:,}")
+    print(f"  Unique: {unique:,} / {len(df):,}")
+    print(f"  All unique: {unique == len(df)}")
+
+# ============================================================
+# 6. Missing values summary
+# ============================================================
+
+print(f"\n{'=' * 70}")
+print("6. MISSING VALUES SUMMARY")
+print(f"{'=' * 70}")
+
+missing = df.isnull().sum()
+missing_pct = (missing / len(df) * 100).round(2)
+
+# Categorize by missingness level
+full = (missing == 0).sum()
+low = ((missing > 0) & (missing_pct < 5)).sum()
+medium = ((missing_pct >= 5) & (missing_pct < 50)).sum()
+high = ((missing_pct >= 50) & (missing_pct < 95)).sum()
+near_empty = (missing_pct >= 95).sum()
+
+print(f"\n  Columns with 0% missing:    {full}")
+print(f"  Columns with <5% missing:   {low}")
+print(f"  Columns with 5-50% missing: {medium}")
+print(f"  Columns with 50-95% missing:{high}")
+print(f"  Columns with >95% missing:  {near_empty}")
+
+print(f"\n  Top 20 most-missing columns:")
+missing_sorted = missing_pct[missing_pct > 0].sort_values(ascending=False).head(20)
+for col, pct in missing_sorted.items():
+    print(f"    {col:<45} {pct:>6.1f}%")
+
+# ============================================================
+# 7. Key origination-time features
+# ============================================================
+
+print(f"\n{'=' * 70}")
+print("7. KEY ORIGINATION-TIME FEATURES")
+print(f"{'=' * 70}")
+
+origination_features = {
+    # Loan terms
+    "loan_amnt": "Loan amount ($)",
+    "term": "Loan term",
+    "int_rate": "Interest rate (%)",
+    "installment": "Monthly installment ($)",
+    "grade": "LC risk grade",
+    "sub_grade": "LC sub-grade",
+    # Borrower info
+    "emp_length": "Employment length",
+    "home_ownership": "Home ownership",
+    "annual_inc": "Annual income ($)",
+    "verification_status": "Income verification",
+    "purpose": "Loan purpose",
+    "title": "Loan title (free text)",
+    "addr_state": "Borrower state",
+    "dti": "Debt-to-income ratio",
+    # Credit history
+    "fico_range_low": "FICO score (low)",
+    "fico_range_high": "FICO score (high)",
+    "earliest_cr_line": "Earliest credit line",
+    "open_acc": "Open credit accounts",
+    "total_acc": "Total credit accounts",
+    "revol_bal": "Revolving balance ($)",
+    "revol_util": "Revolving utilization (%)",
+    "pub_rec": "Public derogatory records",
+    "delinq_2yrs": "Delinquencies (last 2 yrs)",
+    "inq_last_6mths": "Inquiries (last 6 months)",
+    "mort_acc": "Mortgage accounts",
 }
-for col, desc in key_features.items():
-    if col in df.columns:
-        print(f"\n  {desc} ({col}):")
-        print(f"    Min: {df[col].min():.2f}  |  "
-              f"Median: {df[col].median():.2f}  |  "
-              f"Max: {df[col].max():.2f}  |  "
-              f"Mean: {df[col].mean():.2f}")
+
+for col, desc in origination_features.items():
+    if col not in df.columns:
+        print(f"\n  [MISSING] {desc} ({col})")
+        continue
+
+    nulls = df[col].isnull().sum()
+    null_pct = nulls / len(df) * 100
+
+    if df[col].dtype == "object":
+        nunique = df[col].nunique()
+        top_vals = df[col].value_counts().head(5)
+        print(f"\n  {desc} ({col}):  [categorical, {nunique} unique, {null_pct:.1f}% null]")
+        for val, count in top_vals.items():
+            pct = count / len(df) * 100
+            print(f"    {str(val):<30} {count:>10,}  ({pct:.1f}%)")
+    else:
+        s = df[col].dropna()
+        print(f"\n  {desc} ({col}):  [numeric, {null_pct:.1f}% null]")
+        print(f"    min={s.min():.2f}  median={s.median():.2f}  "
+              f"mean={s.mean():.2f}  max={s.max():.2f}")
 
 # ============================================================
-# 11. Summary of implications for our project
+# 8. Potential post-origination columns (leakage risk)
 # ============================================================
 
-print(f"\n{'=' * 60}")
-print("11. IMPLICATIONS FOR PROJECT PIPELINE")
-print(f"{'=' * 60}")
+print(f"\n{'=' * 70}")
+print("8. POST-ORIGINATION COLUMNS (DATA LEAKAGE RISK)")
+print(f"{'=' * 70}")
 print("""
-KEY FINDINGS:
-  1. Dataset has 9,578 rows and 14 columns (simplified LC dataset)
-  2. Target is 'not.fully.paid' (already binary: 0=paid, 1=default)
-  3. No 'loan_status' column — target is pre-computed
-  4. No date columns — cannot do calendar-based temporal split
-  5. No member_id — cannot build per-borrower history features
-  6. Annual income is log-transformed ('log.annual.inc')
-  7. One categorical column: 'purpose' (loan purpose)
-  8. FICO score is available directly
-
-IMPACT ON PROJECT PLAN:
-  - P0.3 (Target): Already defined as 'not.fully.paid', minimal work needed
-  - P0.4 (SQLite): We can still create a relational schema
-  - P0.5 (SQL features): We can create synthetic transactions table
-                          for SQL feature extraction demonstration
-  - P0.6 (Leakage audit): Still critical — verify no post-origination info
-  - P0.8 (Temporal split): Must use random or stratified split instead
-                            of date-based split (no date column)
-  - P0.9/P0.10 (Models): Proceed normally with baseline + XGBoost
+These columns contain information that would NOT be available at the time
+of loan origination. They MUST be excluded from model features in P0.4.
 """)
 
-print("=" * 60)
-print("INSPECTION COMPLETE")
-print("=" * 60)
+post_origination = {
+    # Payment data
+    "total_pymnt": "Total payments received",
+    "total_pymnt_inv": "Total payments by investors",
+    "total_rec_prncp": "Principal received",
+    "total_rec_int": "Interest received",
+    "total_rec_late_fee": "Late fees received",
+    "last_pymnt_d": "Last payment date",
+    "last_pymnt_amnt": "Last payment amount",
+    # Recovery data
+    "recoveries": "Post-charge-off recoveries",
+    "collection_recovery_fee": "Collection recovery fees",
+    # Current status data
+    "out_prncp": "Outstanding principal",
+    "out_prncp_inv": "Outstanding principal (investor)",
+    "last_credit_pull_d": "Last credit pull date",
+    "last_fico_range_high": "Last FICO high (updated)",
+    "last_fico_range_low": "Last FICO low (updated)",
+    # Post-origination flags
+    "hardship_flag": "Hardship program flag",
+    "debt_settlement_flag": "Debt settlement flag",
+    "settlement_status": "Settlement status",
+    "settlement_amount": "Settlement amount",
+    "settlement_date": "Settlement date",
+}
+
+for col, desc in post_origination.items():
+    if col in df.columns:
+        nulls = df[col].isnull().sum()
+        sample = df[col].dropna().iloc[0] if nulls < len(df) else "ALL NULL"
+        print(f"  [LEAKY] {col:<35} ({desc})")
+    else:
+        print(f"  [N/A]   {col:<35} ({desc})")
+
+# ============================================================
+# 9. Summary and implications
+# ============================================================
+
+print(f"\n{'=' * 70}")
+print("9. SUMMARY AND IMPLICATIONS FOR PROJECT")
+print(f"{'=' * 70}")
+
+# Count definitive vs unresolved loans
+if "loan_status" in df.columns:
+    definitive_statuses = ["Fully Paid", "Charged Off", "Default"]
+    policy_paid = "Does not meet the credit policy. Status:Fully Paid"
+    policy_charged = "Does not meet the credit policy. Status:Charged Off"
+
+    definitive_mask = df["loan_status"].isin(definitive_statuses)
+    unresolved_mask = ~definitive_mask
+    # Policy statuses
+    policy_mask = df["loan_status"].isin([policy_paid, policy_charged])
+
+    print(f"""
+  DATASET OVERVIEW:
+    Total rows:           {len(df):>12,}
+    Total columns:        {df.shape[1]:>12}
+    Date range:           Jun 2007 -- Dec 2018
+
+  TARGET (loan_status):
+    Definitive outcomes:  {definitive_mask.sum():>12,}  ({definitive_mask.sum()/len(df)*100:.1f}%)
+      - Fully Paid:       {(df['loan_status']=='Fully Paid').sum():>12,}
+      - Charged Off:      {(df['loan_status']=='Charged Off').sum():>12,}
+      - Default:          {(df['loan_status']=='Default').sum():>12,}
+    Policy exceptions:    {policy_mask.sum():>12,}  ({policy_mask.sum()/len(df)*100:.1f}%)
+    Unresolved/active:    {(unresolved_mask & ~policy_mask).sum():>12,}  ({(unresolved_mask & ~policy_mask).sum()/len(df)*100:.1f}%)
+
+  TEMPORAL SPLIT:
+    issue_d available:    YES (Jun 2007 -- Dec 2018)
+    Enables genuine time-based train/val/test split
+
+  BORROWER HISTORY:
+    member_id:            ALL NULL -- no multi-borrower linkage possible
+
+  FEATURE RICHNESS:
+    Origination features: ~50+ columns available at loan decision time
+    Post-origination:     ~20+ columns that MUST be excluded (leakage)
+    Near-empty (>95%):    ~{near_empty} columns (mostly hardship/settlement/joint)
+
+  IMPACT ON PROJECT PHASES:
+    P0.3R: Map loan_status to default_flag (exclude Current, Late, Grace)
+    P0.4:  Leakage audit -- critical with this many post-origination columns
+    P0.5:  Rich feature engineering from 50+ origination-time columns
+    P0.6:  Temporal train/val/test split using issue_d
+    P0.7:  Logistic Regression baseline
+    P0.8:  XGBoost model
+    P0.9:  Class imbalance handling
+    P0.10: Full evaluation suite
+""")
+
+# Clean up temporary column
+if "issue_date_parsed" in df.columns:
+    df.drop(columns=["issue_date_parsed"], inplace=True)
+
+print("=" * 70)
+print("P0.2R INSPECTION COMPLETE")
+print("=" * 70)

@@ -39,3 +39,5 @@ results/*.joblib
 
 # Environment
 .env
+
+data/processed/*.parquet

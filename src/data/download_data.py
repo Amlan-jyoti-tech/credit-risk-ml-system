@@ -1,67 +1,71 @@
 """
-Download Lending Club Loan Data from OpenML.
+Download Lending Club Loan Data.
 
-Source: OpenML Dataset ID 43729 (Lending-Club-Loan-Data, 2007-2015)
-License: CC0 Public Domain
-Original source: LendingClub.com
+PRIMARY DATASET (full accepted loans):
+    Source: Kaggle - wordsforthewise/lending-club
+    File: accepted_2007_to_2018Q4.csv (~1.6 GB)
+    Rows: ~2.26 million
+    Columns: 151
+    License: CC0 Public Domain
+    Original source: LendingClub.com
 
-This script downloads the full dataset, then samples ~100K rows
-for our project (keeping it manageable for development).
+LEGACY DATASET (simplified):
+    Source: OpenML Dataset ID 43729
+    File: lending_club_loans.csv (~0.8 MB)
+    Rows: 9,578
+    Columns: 14
+
+This project uses the FULL dataset for all phases from P0.2R onward.
+The simplified dataset was used in early P0.1-P0.3 phases and is retained
+for reference but is not used in the modeling pipeline.
+
+Download instructions (full dataset):
+    1. Go to https://www.kaggle.com/datasets/wordsforthewise/lending-club
+    2. Download accepted_2007_to_2018Q4.csv.gz
+    3. Extract and place in data/raw/accepted_2007_to_2018Q4.csv
 """
 
-import pandas as pd
 import os
-import sys
 
 # === Configuration ===
-# Go up from src/data/ to project root, then into data/raw/
-PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 RAW_DIR = os.path.join(PROJECT_ROOT, "data", "raw")
-PARQUET_URL = "https://data.openml.org/datasets/0004/43729/dataset_43729.pq"
-OUTPUT_FILE = os.path.join(RAW_DIR, "lending_club_loans.csv")
-SAMPLE_SIZE = 100_000
-RANDOM_SEED = 42
+
+# Primary dataset (full accepted loans)
+PRIMARY_DATASET = os.path.join(RAW_DIR, "accepted_2007_to_2018Q4.csv")
+
+# Legacy dataset (simplified, from early phases)
+LEGACY_DATASET = os.path.join(RAW_DIR, "lending_club_loans.csv")
 
 
-def main():
-    os.makedirs(RAW_DIR, exist_ok=True)
-    
-    # Step 1: Download the dataset
-    print(f"Downloading Lending Club dataset from OpenML...")
-    print(f"URL: {PARQUET_URL}")
-    print("This may take a minute depending on your connection...")
-    
-    try:
-        df = pd.read_parquet(PARQUET_URL)
-    except Exception as e:
-        print(f"\nERROR: Failed to download from OpenML: {e}")
-        print("Possible causes:")
-        print("  - No internet connection")
-        print("  - OpenML server is down")
-        print("  - pyarrow not installed (run: pip install pyarrow)")
-        sys.exit(1)
-    
-    print(f"\nFull dataset shape: {df.shape}")
-    print(f"Full dataset rows: {df.shape[0]:,}")
-    print(f"Full dataset columns: {df.shape[1]}")
-    
-    # Step 2: Sample if dataset is larger than SAMPLE_SIZE
-    if len(df) > SAMPLE_SIZE:
-        print(f"\nSampling {SAMPLE_SIZE:,} rows (random_seed={RANDOM_SEED})...")
-        df_sample = df.sample(n=SAMPLE_SIZE, random_state=RANDOM_SEED)
+def check_data():
+    """Check which datasets are available."""
+    print("=" * 60)
+    print("DATASET STATUS CHECK")
+    print("=" * 60)
+
+    primary_exists = os.path.exists(PRIMARY_DATASET)
+    legacy_exists = os.path.exists(LEGACY_DATASET)
+
+    if primary_exists:
+        size_mb = os.path.getsize(PRIMARY_DATASET) / (1024 * 1024)
+        print(f"\n  [OK] Primary dataset found: {PRIMARY_DATASET}")
+        print(f"       Size: {size_mb:.1f} MB")
     else:
-        print(f"\nDataset has {len(df):,} rows, keeping all (under {SAMPLE_SIZE:,} threshold).")
-        df_sample = df
-    
-    # Step 3: Save to CSV
-    print(f"Saving to: {OUTPUT_FILE}")
-    df_sample.to_csv(OUTPUT_FILE, index=False)
-    
-    file_size_mb = os.path.getsize(OUTPUT_FILE) / (1024 * 1024)
-    print(f"Saved! File size: {file_size_mb:.1f} MB")
-    print(f"Sample shape: {df_sample.shape}")
-    print("\nDone. Dataset is ready for inspection.")
+        print(f"\n  [MISSING] Primary dataset NOT found: {PRIMARY_DATASET}")
+        print(f"       Download from: https://www.kaggle.com/datasets/wordsforthewise/lending-club")
+        print(f"       File needed: accepted_2007_to_2018Q4.csv")
+
+    if legacy_exists:
+        size_mb = os.path.getsize(LEGACY_DATASET) / (1024 * 1024)
+        print(f"\n  [OK] Legacy dataset found: {LEGACY_DATASET}")
+        print(f"       Size: {size_mb:.1f} MB")
+        print(f"       (Not used in current pipeline -- retained for reference)")
+
+    return primary_exists
 
 
 if __name__ == "__main__":
-    main()
+    if not check_data():
+        print("\n\nPlease download the primary dataset before proceeding.")
+        print("See docstring at top of this file for instructions.")
