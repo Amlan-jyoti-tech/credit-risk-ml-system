@@ -41,3 +41,5 @@ results/*.joblib
 .env
 
 data/processed/*.parquet
+
+data/processed/**/*.parquet
