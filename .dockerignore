@@ -1,0 +1,38 @@
+# Git
+.git
+.gitignore
+
+# Data (Raw, processed, test sets)
+data/
+*.parquet
+*.csv
+
+# Python caching
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# Notebooks and EDA
+notebooks/
+
+# Local Environment
+.env
+venv/
+env/
+.venv/
+
+# IDEs
+.idea/
+.vscode/
+
+# Ignore all models except the frozen ones
+src/models/*.joblib
+!src/models/xgboost_baseline.joblib
+
+# Ignore all results except calibration
+results/
+!results/calibration/p09_calibrated_xgb_isotonic.joblib
+
+# Tests
+tests/

@@ -13,3 +13,9 @@ matplotlib>=3.6.0
 jupyter>=1.0.0
 
 # SQLite is part of Python stdlib — no extra dependency needed
+
+# API and Deployment
+fastapi>=0.103.0
+httpx>=0.25.0
+pydantic>=2.4.0
+uvicorn>=0.23.0

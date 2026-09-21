@@ -15,11 +15,15 @@ Built using the public **Lending Club Accepted Loans** dataset.
 - **SQL-based feature extraction** from a relational schema (customers, loans, transactions)
 - **Baseline:** Logistic Regression → **Main model:** XGBoost
 - **Evaluation:** Precision, Recall, F1, ROC-AUC, PR-AUC with threshold analysis
+- **Calibration (P0.9):** Post-hoc Isotonic Regression on held-out calibration set
+- **Deployment (P0.10):** Production-style FastAPI inference service with strict data leakage rejection
 
 ## Tech Stack
 
 - Python, pandas, NumPy
 - scikit-learn, XGBoost
+- FastAPI, Pydantic, Uvicorn (Inference Service)
+- Docker (Containerization)
 - SQLite (relational feature extraction)
 - Matplotlib (visualization)
 - Jupyter (exploration)
