@@ -1,0 +1,86 @@
+{
+    "phase": "P0.9",
+    "title": "Model Calibration & Probability Quality Assessment",
+    "design": "docs/P0.9_calibration_design.md",
+    "environment": {
+        "python": "3.11.8",
+        "scikit_learn": "1.8.0",
+        "numpy": "2.3.2",
+        "pandas": "2.2.2",
+        "random_state": 42
+    },
+    "calibration_api_note": "CalibratedClassifierCV(cv='prefit') was removed in sklearn 1.2. P0.9 uses the equivalent explicit workflow: frozen model predict_proba scores are passed to IsotonicRegression(out_of_bounds='clip').fit(). The base model is never refit. Approved as Option A.",
+    "frozen_models": {
+        "LR": "src/models/logistic_regression_baseline.joblib",
+        "XGB": "src/models/xgboost_baseline.joblib"
+    },
+    "fingerprints": {
+        "LR_val_roc_auc_reference": 0.6995575916323613,
+        "LR_val_roc_auc_computed": 0.6995575916323613,
+        "XGB_val_roc_auc_reference": 0.7074149159306107,
+        "XGB_val_roc_auc_computed": 0.7074149159306107,
+        "tolerance": 1e-06,
+        "status": "PASS"
+    },
+    "data": {
+        "full_val_n": 283026,
+        "default_rate": 0.14886265,
+        "cal_train_n": 198118,
+        "cal_eval_n": 84908,
+        "cal_train_default_rate": 0.148861,
+        "cal_eval_default_rate": 0.148867,
+        "split_method": "train_test_split(test_size=0.30, stratify=y_val, random_state=42)",
+        "test_data_loaded": false
+    },
+    "calibration_config": {
+        "n_bins": 10,
+        "primary_strategy": "quantile",
+        "secondary_strategy": "uniform (cross-check only)",
+        "method": "IsotonicRegression(out_of_bounds='clip')",
+        "fit_on": "cal-train base-model scores",
+        "evaluated_on": "cal-eval (disjoint from cal-train)"
+    },
+    "full_val_metrics": {
+        "brier_noskill": 0.12670256,
+        "LR": {
+            "brier_score": 0.19047245,
+            "brier_skill_score": -0.50330391,
+            "ece_quantile": 0.25628577
+        },
+        "XGB": {
+            "brier_score": 0.17990112,
+            "brier_skill_score": -0.41986967,
+            "ece_quantile": 0.23444056
+        }
+    },
+    "posthoc_wrapper_cal_eval": {
+        "LR": {
+            "base_brier": 0.19023381,
+            "calibrated_brier": 0.11850092,
+            "delta_brier": 0.07173289,
+            "base_ece": 0.25608515,
+            "calibrated_ece": 0.00111049
+        },
+        "XGB": {
+            "base_brier": 0.17948933,
+            "calibrated_brier": 0.11755093,
+            "delta_brier": 0.0619384,
+            "base_ece": 0.23410815,
+            "calibrated_ece": 0.00245267
+        }
+    },
+    "p07_thresholds_unchanged": {
+        "LR": 0.5,
+        "XGB": 0.45,
+        "note": "P0.7 thresholds frozen. P0.9 does not select or apply a new production or business threshold."
+    },
+    "cost_threshold_analysis": "Illustrative only -- see cost_threshold_illustration.csv. Not a production threshold recommendation.",
+    "what_p09_does_not_establish": [
+        "Calibration is not causality.",
+        "Calibration does not prove business-optimal threshold.",
+        "Illustrative threshold analysis is not a production policy.",
+        "P0.9 does not modify the P0.7 baseline models.",
+        "Test data was not used.",
+        "Post-hoc calibration does not change ROC-AUC (ROC-AUC is rank-based; rescaling scores preserves rank order)."
+    ]
+}

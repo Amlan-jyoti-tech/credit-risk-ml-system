@@ -1,0 +1,23 @@
+{
+    "data_scope": "Full validation set (val_lr / val_xgb parquets), 283,026 rows",
+    "n_samples": 283026,
+    "default_rate": 0.14886265,
+    "brier_noskill_baseline": 0.12670256,
+    "LR": {
+        "brier_score": 0.19047245,
+        "brier_skill_score": -0.50330391,
+        "ece_quantile": 0.25628577
+    },
+    "XGB": {
+        "brier_score": 0.17990112,
+        "brier_skill_score": -0.41986967,
+        "ece_quantile": 0.23444056
+    },
+    "definitions": {
+        "brier_score": "sklearn.metrics.brier_score_loss(y_true, y_prob); lower=better",
+        "brier_skill_score": "1 - (model_brier / noskill_brier); >0 beats naive baseline",
+        "ece": "Weighted mean |frac_pos - mean_pred| per bin; quantile, n_bins=10",
+        "noskill_baseline": "Always predict observed validation-set default rate"
+    },
+    "important_distinction": "ROC-AUC measures discrimination (ranking ability) and is rank-based. Brier Score and ECE measure calibration (probability reliability). These are independent properties. Post-hoc calibration rescales scores but does not change their ranking order, so ROC-AUC is unaffected."
+}
