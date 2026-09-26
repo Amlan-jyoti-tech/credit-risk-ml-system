@@ -112,3 +112,24 @@ class LoanApplicationRequest(BaseModel):
             raise ValueError('earliest_cr_line cannot be after issue_d')
             
         return self
+
+class HealthResponse(BaseModel):
+    status: str
+
+class ModelInfoResponse(BaseModel):
+    model_name: str
+    model_type: str
+    training_phase: str
+    calibration_artifact: str
+    feature_pipeline_version: str
+    python_version: str
+    scikit_learn_version: str
+
+class PredictionResponse(BaseModel):
+    raw_default_probability: float
+    calibrated_default_probability: float
+    model_name: str
+    model_version: str
+    calibration_method: str
+    risk_band: str
+    disclaimer: str = "ML engineering portfolio implementation. Not a production lending system."

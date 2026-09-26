@@ -31,7 +31,9 @@ src/models/*.joblib
 !src/models/xgboost_baseline.joblib
 
 # Ignore all results except calibration
-results/
+results/*
+!results/calibration
+results/calibration/*
 !results/calibration/p09_calibrated_xgb_isotonic.joblib
 
 # Tests
