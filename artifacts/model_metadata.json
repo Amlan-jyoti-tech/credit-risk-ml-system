@@ -5,5 +5,5 @@
   "calibration_artifact": "p09_calibrated_xgb_isotonic.joblib",
   "feature_pipeline_version": "P0.10",
   "python_version": "3.11.8 (tags/v3.11.8:db85d51, Feb  6 2024, 22:03:32) [MSC v.1937 64 bit (AMD64)]",
-  "scikit_learn_version": "1.5.3"
+  "scikit_learn_version": "1.8.0"
 }

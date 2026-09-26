@@ -122,6 +122,7 @@ def serialize_feature_pipeline():
     
     # 10. Generate and save Metadata
     import json
+    import sklearn
     metadata = {
         "model_name": "xgboost_baseline",
         "model_type": "XGBClassifier",
@@ -129,7 +130,7 @@ def serialize_feature_pipeline():
         "calibration_artifact": "p09_calibrated_xgb_isotonic.joblib",
         "feature_pipeline_version": "P0.10",
         "python_version": sys.version,
-        "scikit_learn_version": joblib.__version__ # Simplified for joblib/sklearn version check
+        "scikit_learn_version": sklearn.__version__
     }
     
     with open(METADATA_PATH, 'w') as f:
